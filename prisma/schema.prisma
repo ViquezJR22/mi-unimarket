@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ListingType {
+  PRODUCT
+  SERVICE
+}
+
+enum UserRole {
+  MEMBER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  AWAITING_CONFIRMATIONS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum PaymentMethod {
+  CASH
+  SINPE_MOBILE
+}
+
+enum DebtStatus {
+  PENDING
+  PAID
+  OVERDUE
+  DISPUTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  avatar       String   @default("avatar-1")
+  gender       String?
+  passwordHash String
+  role         UserRole @default(MEMBER)
+  isSuspended Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  listings        Listing[]        @relation("SellerListings")
+  purchases       Order[]          @relation("BuyerOrders")
+  sales           Order[]          @relation("SellerOrders")
+  debts           CommissionDebt[]
+  reviewsGiven    Review[]         @relation("ReviewsGiven")
+  reviewsReceived Review[]         @relation("ReviewsReceived")
+}
+
+model Listing {
+  id          String      @id @default(cuid())
+  title       String
+  description String      @db.Text
+  type        ListingType
+  category    String
+  price       Int
+  imageUrl    String?
+  imageUrls   String[]    @default([])
+  location    String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  sellerId String?
+  seller   User?   @relation("SellerListings", fields: [sellerId], references: [id], onDelete: SetNull)
+
+  orders Order[]
+
+  @@index([sellerId])
+  @@index([type, isActive])
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  listingId     String
+  buyerId       String
+  sellerId      String
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod @default(CASH)
+
+  amount           Int
+  commissionRate   Int @default(10)
+  commissionAmount Int
+  sellerAmount     Int
+
+  buyerConfirmedReceipt Boolean @default(false)
+  sellerConfirmedCash   Boolean @default(false)
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  buyer   User    @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
+  seller  User    @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Restrict)
+
+  debt    CommissionDebt?
+  reviews Review[]
+
+  @@index([buyerId, createdAt])
+  @@index([sellerId, status])
+  @@index([status, createdAt])
+}
+
+model CommissionDebt {
+  id       String     @id @default(cuid())
+  orderId  String     @unique
+  sellerId String
+  amount   Int
+  status   DebtStatus @default(PENDING)
+
+  createdAt DateTime  @default(now())
+  dueAt     DateTime
+  paidAt    DateTime?
+  proofUrl  String?
+
+  order  Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  seller User  @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+
+  @@index([sellerId, status])
+  @@index([status, dueAt])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  orderId    String
+  reviewerId String
+  revieweeId String
+  stars      Int
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  reviewer User  @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Restrict)
+  reviewee User  @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, reviewerId])
+  @@index([revieweeId, createdAt])
+}
