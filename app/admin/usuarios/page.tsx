@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAdminUser } from "@/lib/admin";
+export const instant = false
 
 export default async function AdminPage() {
   const admin = await getAdminUser();
