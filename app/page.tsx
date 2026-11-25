@@ -221,12 +221,18 @@ export default function Home() {
                     ? [listing.imageUrl]
                     : [];
 
+              const detailHref = `/publicacion/${listing.id}`;
+
               return (
                 <article
                   key={listing.id}
                   className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <div className="flex h-52 items-center justify-center bg-indigo-50">
+                  {/* Foto: al hacer clic abre la publicación */}
+                  <a
+                    href={detailHref}
+                    className="flex h-52 items-center justify-center bg-indigo-50"
+                  >
                     {photos.length > 0 ? (
                       <div className="flex h-full w-full gap-1 overflow-x-auto snap-x snap-mandatory">
                         {photos.map((photo, index) => (
@@ -243,7 +249,7 @@ export default function Home() {
                         {listing.type === "PRODUCT" ? "📦" : "🧑‍💻"}
                       </span>
                     )}
-                  </div>
+                  </a>
 
                   <div className="p-5">
                     <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
@@ -254,8 +260,11 @@ export default function Home() {
                       {listing.category}
                     </p>
 
+                    {/* Título: al hacer clic abre la publicación */}
                     <h3 className="mt-1 text-lg font-bold">
-                      {listing.title}
+                      <a href={detailHref} className="hover:text-indigo-700">
+                        {listing.title}
+                      </a>
                     </h3>
 
                     <p className="mt-2 line-clamp-3 text-sm text-slate-600">
@@ -277,6 +286,14 @@ export default function Home() {
                         Desliza las fotografías para ver las demás ({photos.length})
                       </p>
                     )}
+
+                    {/* Botón para ver el detalle y la opción de compra */}
+                    <a
+                      href={detailHref}
+                      className="mt-4 block rounded-xl bg-indigo-700 px-4 py-3 text-center font-semibold text-white hover:bg-indigo-800"
+                    >
+                      Ver detalle
+                    </a>
                   </div>
                 </article>
               );
